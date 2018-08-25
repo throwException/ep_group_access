@@ -1,0 +1,9 @@
+{
+  "name": "ep_group_access",
+  "description": "Access control by group",
+  "version": "0.0.1",
+  "author": "Stefan Thoeni <stefan.thoeni@piratenpartei.de>",
+  "dependencies": {},
+  "engines": { "node": ">= 0.4.1" },
+  "repository" : { "type" : "git", "url"  : "https://github.com/JohnMcLear/ep_button_link.git" }
+}
