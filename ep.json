@@ -7,7 +7,8 @@
       },
       "hooks": {
         "handleMessage": "ep_group_access/index:handleMessage",
-        "clientVars": "ep_group_access/index:clientVars"
+        "clientVars": "ep_group_access/index:clientVars",
+        "authorize": "ep_group_access/index:authorize"
       }
     }
   ]

@@ -111,3 +111,9 @@ exports.clientVars = function(hook, context, callback){
     });
   });
 };
+
+exports.authorize = function(hook_name, context) {
+  console.warn(hook_name);
+  console.warn(context);
+}
+
