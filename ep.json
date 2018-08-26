@@ -1,12 +1,13 @@
 {
   "parts": [
     {
-      "name": "button_link",
+      "name": "ep_group_access",
       "client_hooks": {
         "aceInitialized": "ep_group_access/static/js/main:postAceInit"
       },
       "hooks": {
-        "clientVars":"ep_group_access/index:clientVars"
+        "handleMessage": "ep_group_access/index:handleMessage",
+        "clientVars": "ep_group_access/index:clientVars"
       }
     }
   ]

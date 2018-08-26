@@ -16,6 +16,9 @@ exports.postAceInit = function(hook_name, args) {
         } else {
           $('#ep_group_access_popup').css({ "display":"none"});
         }
+      } else if (event.target.id == 'ep_group_access_save') {
+        save_groups();  
+        $('#ep_group_access_popup').css({ "display":"none"});
       } else if ((event.target.id == 'ep_group_access_popup') || 
                  $(event.target).parents("#ep_group_access_popup").length) {
       } else {
@@ -25,7 +28,7 @@ exports.postAceInit = function(hook_name, args) {
   }
 
   if($('#ep_group_access_popup').length === 0) {
-    var box = "<div id='ep_group_access_popup' class='popup'><h2>Group Access</h2><div id='ep_group_access_boxes'></div><p><input name='submit' value='Save' id='ep_group_access_save' type='submit'></p></div>";
+    var box = "<div id='ep_group_access_popup' class='popup'><h2>Group Access</h2><div id='ep_group_access_boxes'></div><p><input name='submit' value='Save' id='ep_group_access_save' type='submit' /></p></div>";
     $('#editorcontainerbox').after(box);
     $('#ep_group_access_popup').css({ "position":"absolute", "right":"16px", "top":"128px", "width":"300px", "height":"200px", "z-index":"500", "display":"none"});
     update_group_boxes();
@@ -42,10 +45,37 @@ function update_group_boxes() {
   }
   var boxes = document.getElementById("ep_group_access_boxes");
   boxes.innerHTML = text;
+  pad.groups = groups;
+  update_groups(clientVars.ep_group_access.selected);
 }
 
-function update_groups() {
+function update_groups(selected) {
+  for (i = 0; i < pad.groups.length; i++) {
+    var box = document.getElementById("ep_group_access_group_" + pad.groups[i]);
+    if (box) {
+      box.checked = selected.includes(pad.groups[i]);
+    }
+  }
 }
 
 function save_groups() {
+  var myAuthorId = pad.getUserId();
+  var padId = pad.getPadId();
+  var selected = [];
+  for (i = 0; i < pad.groups.length; i++) {
+    var box = document.getElementById("ep_group_access_group_" + pad.groups[i]);
+    if (box) {
+      if (box.selected) {
+        selected.push(pad.groups[i]);
+      }
+    }
+  }
+  var message = {
+    type : 'accessGroups',
+    action : 'sendAccessGroupsMessage',
+    message : selected,
+    padId : padId,
+    myAuthorId : myAuthorId
+  }
+  pad.collabClient.sendMessage(message);  // Send the chat position message to the server
 }
