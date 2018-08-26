@@ -25,9 +25,27 @@ exports.postAceInit = function(hook_name, args) {
   }
 
   if($('#ep_group_access_popup').length === 0) {
-    var box = "<div id='ep_group_access_popup' class='popup'><h2>Group Access</h2></div>";
+    var box = "<div id='ep_group_access_popup' class='popup'><h2>Group Access</h2><div id='ep_group_access_boxes'></div><p><input name='submit' value='Save' id='ep_group_access_save' type='submit'></p></div>";
     $('#editorcontainerbox').after(box);
-    $('#ep_group_access_popup').css({ "position":"absolute", "right":"16px", "top":"128px", "width":"500px", "height":"300px", "z-index":"500", "display":"none"});
+    $('#ep_group_access_popup').css({ "position":"absolute", "right":"16px", "top":"128px", "width":"300px", "height":"200px", "z-index":"500", "display":"none"});
+    update_group_boxes();
   }
 
+}
+
+function update_group_boxes() {
+  var groups = clientVars.ep_group_access.groups;
+  var i;
+  var text = "";
+  for (i = 0; i < groups.length; i++) {
+    text += "<p><input type='checkbox' name='ep_group_access_group_" + groups[i] + "' value='" + groups[i] + "'>" + groups[i] + "<br></p>"
+  }
+  var boxes = document.getElementById("ep_group_access_boxes");
+  boxes.innerHTML = text;
+}
+
+function update_groups() {
+}
+
+function save_groups() {
 }
