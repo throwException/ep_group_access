@@ -4,6 +4,7 @@ var db = require('ep_etherpad-lite/node/db/DB').db;
 var padMessageHandler = require("../src/node/handler/PadMessageHandler");
 var async = require('../src/node_modules/async');
 var authorManager = require("../src/node/db/AuthorManager");
+var passport = require('passport');
 
 // Remove cache for this procedure
 db['dbSettings'].cache = 0;
@@ -112,8 +113,32 @@ exports.clientVars = function(hook, context, callback){
   });
 };
 
-exports.authorize = function(hook_name, context) {
-  console.warn(hook_name);
-  console.warn(context);
+exports.authorize = function(hook_name, context, cb) {
+  if (context.req.session && context.req.session.user) {
+    console.warn(context.resource);
+    console.warn(context.req.session.user.username);
+    if (context.resource.startsWith('/p/')) {
+      var padId = context.resource.substring(3);
+      db.get("owner:"+padId, function(err, value){
+        if (value && value.length > 0) {
+          if (value === context.req.session.user.username) {
+            console.warn('pad owner ' + context.req.session.user.username + ' authorized');
+            return cb([true]);
+          } else {
+            console.warn('user ' + context.req.session.user.username + ' unauthorized');
+            return cb([false]);
+          }
+        } else {
+          console.warn('user ' + context.req.session.user.username + ' authorized as new owner');
+          db.set("owner:"+padId, context.req.session.user.username);
+          return cb([true]);
+        }
+      });
+    } else {
+      return cb([true]);
+    }
+  } else {
+    return cb([false]);
+  }
 }
 
