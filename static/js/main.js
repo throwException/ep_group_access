@@ -41,7 +41,7 @@ function update_group_boxes() {
   var i;
   var text = "";
   for (i = 0; i < groups.length; i++) {
-    text += "<p><input type='checkbox' name='ep_group_access_group_" + groups[i] + "' value='" + groups[i] + "'>" + groups[i] + "<br></p>"
+    text += "<p><input type='checkbox' id='ep_group_access_group_" + groups[i] + "' value='" + groups[i] + "'>" + groups[i] + "</p>"
   }
   var boxes = document.getElementById("ep_group_access_boxes");
   boxes.innerHTML = text;
@@ -65,7 +65,7 @@ function save_groups() {
   for (i = 0; i < pad.groups.length; i++) {
     var box = document.getElementById("ep_group_access_group_" + pad.groups[i]);
     if (box) {
-      if (box.selected) {
+      if (box.checked) {
         selected.push(pad.groups[i]);
       }
     }

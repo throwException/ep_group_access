@@ -3,6 +3,7 @@ var request = require('request');
 var db = require('ep_etherpad-lite/node/db/DB').db;
 var padMessageHandler = require("../src/node/handler/PadMessageHandler");
 var async = require('../src/node_modules/async');
+var authorManager = require("../src/node/db/AuthorManager");
 
 // Remove cache for this procedure
 db['dbSettings'].cache = 0;
@@ -13,7 +14,6 @@ var buffer = {};
 * Handle incoming messages from clients
 */
 exports.handleMessage = function(hook_name, context, callback){
-  console.warn('handleMessage');
   var isGroupAccessMessage = false;
   if(context){
     if(context.message && context.message){
@@ -32,7 +32,6 @@ exports.handleMessage = function(hook_name, context, callback){
     callback(false);
     return false;
   }
-  console.warn('groupAccessMessage: ' + message);
 
   var message = context.message.data;
   /***
@@ -89,21 +88,7 @@ function sendToRoom(message, msg){
 
 exports.clientVars = function(hook, context, callback){
   var padId = context.pad.id;
-
   var ep_group_access = {};
-  if (settings.ep_group_access) {
-     if(!settings.ep_group_access.link){
-       console.warn("No link set for ep_group_access, add ep_group_access.link to settings.json");
-       ep_group_access.link = "https://github.com/JohnMcLear/ep_group_access";
-     } else {
-       ep_group_access.link = settings.ep_group_access.link;
-     }
-  } else {
-    ep_group_access = {};
-    ep_group_access.link = "https://github.com/JohnMcLear/ep_group_access";
-    console.warn("No link set for ep_group_access, add ep_group_access.link to settings.json");
-  }
-    
   request.get({
     url: settings.ep_group_access.userinfo_url,
     json: true
