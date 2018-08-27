@@ -141,41 +141,28 @@ exports.authorize = function(hook_name, context, cb) {
 }
 
 function authorizePad(context, padId, cb) {
-  return db.get("owner:"+padId, function(err, value){
-    if (value && value.length > 0) {
-      var padOwner = value;
-      if (padOwner === context.req.session.user.username) {
-        console.info(context.resource + ' pad owner ' + context.req.session.user.username + ' authorized');
-        return cb([true]);
-      } else {
-        if (context.req.session.user.groups) {
-          return db.get("accessGroups:"+padId, function(err, value){
-            if (value) {
-              var padGroups = value.split(',');
-              if (groupMatch(padGroups, context.req.session.user.groups)) {
-                console.info(context.resource + ' user ' + context.req.session.user.username + ' authorized by group match');
-                return cb([true]);
-              } else {
-                console.info(context.resource + ' user ' + context.req.session.user.username + ' unauthorized cause no group matches');
-                context.res.status(403).send('<h1>Unauthorized</h1><p>User ' + context.req.session.user.username + ' is not authorized to access pad ' + padId + '. If please contact the pad owner ' + padOwner + ' if you believe you should have access to this pad.</p>');
-                return null;
-              }
-            } else {
-              console.info(context.resource + ' user ' + context.req.session.user.username + ' unauthorized cause no groups for pad');
-              return cb([false]);
-            }
-          });
+  if (context.req.session.user.groups) {
+    return db.get("accessGroups:"+padId, function(err, value){
+      if (value) {
+        var padGroups = value.split(',');
+        if (groupMatch(padGroups, context.req.session.user.groups)) {
+          console.info(context.resource + ' user ' + context.req.session.user.username + ' authorized by group match');
+          return cb([true]);
         } else {
-          console.info(context.resource + ' user ' + context.req.session.user.username + ' unauthorized cause no group info for user');
-          return cb([false]);
+          console.info(context.resource + ' user ' + context.req.session.user.username + ' unauthorized cause no group matches');
+          context.res.status(403).send('<h1>Unauthorized</h1><p>User ' + context.req.session.user.username + ' is not authorized to access pad ' + padId + '. If please contact the pad owner ' + padOwner + ' if you believe you should have access to this pad.</p>');
+          return null;
         }
+      } else {
+        console.info(context.resource + ' user ' + context.req.session.user.username + ' autorized for unclaimed pad');
+        db.set("accessGroups:"+padId, context.req.session.user.groups.join());
+        return cb([true]);
       }
-    } else {
-      console.info(context.resource + ' user ' + context.req.session.user.username + ' authorized as new owner');
-      db.set("owner:"+padId, context.req.session.user.username);
-      return cb([true]);
-    }
-  });
+    });
+  } else {
+    console.info(context.resource + ' user ' + context.req.session.user.username + ' unauthorized cause no group info for user');
+    return cb([false]);
+  }
 }
 
 function groupMatch(padGroups, userGroups) {
