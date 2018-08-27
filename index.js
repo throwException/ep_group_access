@@ -88,57 +88,103 @@ function sendToRoom(message, msg){
 }
 
 exports.clientVars = function(hook, context, callback){
-  var padId = context.pad.id;
-  var ep_group_access = {};
+
+  // update all group but don't wait for it because it's too slow. 
   request.get({
     url: settings.ep_group_access.userinfo_url,
     json: true
   }, function (error, response, data) {
-    if (error) {
-      ep_group_access.groups = [];
-      ep_group_access.selected = [];
-      return callback({ep_group_access: ep_group_access});
+    if (!error) {
+      db.set("allGroups", data.groups.join());
     }
+  });
 
-    ep_group_access.groups = data.groups;
+  var padId = context.pad.id;
+  var ep_group_access = {};
 
+  // read all groups from database, even though it may be stale
+  db.get("allGroups", function(err, value){
+    if (value) {
+      ep_group_access.groups = value.split(',');
+    } else {
+      ep_group_access.groups = [];
+    }
+    
     db.get("accessGroups:"+padId, function(err, value){
       if (value) {
         ep_group_access.selected = value.split(',');
       } else {
         ep_group_access.selected = [];
       }
+
       return callback({ep_group_access: ep_group_access});
     });
   });
 };
 
 exports.authorize = function(hook_name, context, cb) {
-  if (context.req.session && context.req.session.user) {
-    console.warn(context.resource);
-    console.warn(context.req.session.user.username);
+  if (context.resource.startsWith('/auth')) {
+    console.info(context.resource + ' bypasses authorization cause authentication');
+    return cb([true]);
+  } else if (context.req.session && context.req.session.user) {
     if (context.resource.startsWith('/p/')) {
       var padId = context.resource.substring(3);
-      db.get("owner:"+padId, function(err, value){
-        if (value && value.length > 0) {
-          if (value === context.req.session.user.username) {
-            console.warn('pad owner ' + context.req.session.user.username + ' authorized');
-            return cb([true]);
-          } else {
-            console.warn('user ' + context.req.session.user.username + ' unauthorized');
-            return cb([false]);
-          }
-        } else {
-          console.warn('user ' + context.req.session.user.username + ' authorized as new owner');
-          db.set("owner:"+padId, context.req.session.user.username);
-          return cb([true]);
-        }
-      });
+      return authorizePad(context, padId, cb);
     } else {
+      console.info(context.resource + ' user ' + context.req.session.user.username + ' authorized cause resource');
       return cb([true]);
     }
   } else {
+    console.info(context.resource + ' unauthorized cause no session');
     return cb([false]);
   }
+}
+
+function authorizePad(context, padId, cb) {
+  return db.get("owner:"+padId, function(err, value){
+    if (value && value.length > 0) {
+      var padOwner = value;
+      if (padOwner === context.req.session.user.username) {
+        console.info(context.resource + ' pad owner ' + context.req.session.user.username + ' authorized');
+        return cb([true]);
+      } else {
+        if (context.req.session.user.groups) {
+          return db.get("accessGroups:"+padId, function(err, value){
+            if (value) {
+              var padGroups = value.split(',');
+              if (groupMatch(padGroups, context.req.session.user.groups)) {
+                console.info(context.resource + ' user ' + context.req.session.user.username + ' authorized by group match');
+                return cb([true]);
+              } else {
+                console.info(context.resource + ' user ' + context.req.session.user.username + ' unauthorized cause no group matches');
+                context.res.status(403).send('<h1>Unauthorized</h1><p>User ' + context.req.session.user.username + ' is not authorized to access pad ' + padId + '. If please contact the pad owner ' + padOwner + ' if you believe you should have access to this pad.</p>');
+                return null;
+              }
+            } else {
+              console.info(context.resource + ' user ' + context.req.session.user.username + ' unauthorized cause no groups for pad');
+              return cb([false]);
+            }
+          });
+        } else {
+          console.info(context.resource + ' user ' + context.req.session.user.username + ' unauthorized cause no group info for user');
+          return cb([false]);
+        }
+      }
+    } else {
+      console.info(context.resource + ' user ' + context.req.session.user.username + ' authorized as new owner');
+      db.set("owner:"+padId, context.req.session.user.username);
+      return cb([true]);
+    }
+  });
+}
+
+function groupMatch(padGroups, userGroups) {
+  var i;
+  for (i = 0; i < padGroups.length; i++) {
+    if (userGroups.includes(padGroups[i])) {
+      return true;
+    }
+  }
+  return false;
 }
 
