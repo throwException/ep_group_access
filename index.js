@@ -1,9 +1,9 @@
 var settings = require('ep_etherpad-lite/node/utils/Settings');
 var request = require('request');
 var db = require('ep_etherpad-lite/node/db/DB').db;
-var padMessageHandler = require("../src/node/handler/PadMessageHandler");
-var async = require('../src/node_modules/async');
-var authorManager = require("../src/node/db/AuthorManager");
+var padMessageHandler = require("../../src/node/handler/PadMessageHandler");
+var async = require('../../src/node_modules/async');
+var authorManager = require("../../src/node/db/AuthorManager");
 var passport = require('passport');
 
 // Remove cache for this procedure
