@@ -126,6 +126,8 @@ exports.authorize = function(hook_name, context, cb) {
   if (context.resource.startsWith('/auth')) {
     console.info(context.resource + ' bypasses authorization cause authentication');
     return cb([true]);
+  } else if (context.resource.startsWith('/admin')) {
+    return authorizeAdmin(context, cb);
   } else if (context.req.session && context.req.session.user) {
     if (context.resource.startsWith('/p/')) {
       var padId = context.resource.substring(3);
@@ -140,6 +142,22 @@ exports.authorize = function(hook_name, context, cb) {
   }
 }
 
+function authorizeAdmin(context, cb) {
+  if (context.req.session.user.groups) {
+    if (context.req.session.user.groups.includes('admin')) {
+      console.info(context.resource + ' user ' + context.req.session.user.username + ' authorized by admin group');
+      return cb([true]);
+    } else {
+      console.info(context.resource + ' user ' + context.req.session.user.username + ' unauthorized cause no admin group');
+      context.res.status(403).send('<h1>Unauthorized</h1><p>User ' + context.req.session.user.username + ' is not authorized to access admin area.</p>');
+      return null;
+    }
+  } else {
+    console.info(context.resource + ' user ' + context.req.session.user.username + ' unauthorized cause no group info for user');
+    return cb([false]);
+  }
+}
+
 function authorizePad(context, padId, cb) {
   if (context.req.session.user.groups) {
     return db.get("accessGroups:"+padId, function(err, value){
@@ -150,7 +168,7 @@ function authorizePad(context, padId, cb) {
           return cb([true]);
         } else {
           console.info(context.resource + ' user ' + context.req.session.user.username + ' unauthorized cause no group matches');
-          context.res.status(403).send('<h1>Unauthorized</h1><p>User ' + context.req.session.user.username + ' is not authorized to access pad ' + padId + '. If please contact the pad owner ' + padOwner + ' if you believe you should have access to this pad.</p>');
+          context.res.status(403).send('<h1>Unauthorized</h1><p>User ' + context.req.session.user.username + ' is not authorized to access pad ' + padId + '.</p>');
           return null;
         }
       } else {
